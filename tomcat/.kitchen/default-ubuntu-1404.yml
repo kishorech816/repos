@@ -1,0 +1,7 @@
+---
+hostname: 127.0.0.1
+port: '2222'
+username: vagrant
+ssh_key: C:/Users/IBM_ADMIN/Desktop/chef/tomcat/.kitchen/kitchen-vagrant/kitchen-tomcat-default-ubuntu-1404/.vagrant/machines/default/virtualbox/private_key
+last_action: create
+last_error: Kitchen::ActionFailed

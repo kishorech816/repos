@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#Tomcat 7 start/stop/status script
+#
+# chkconfig 2345 90 60
+#
+# Description:
+
+export JAVA_HOME=/apps/bweb/java/jdk1.8.0_111
+export PATH=$JAVA_HOME/bin:$PATH
+export CATALINA_HOME=/apps/bweb/tomcat
+export CATALINA_HOME-/apps/bweb/tomcat
+export TOMCAT_USER=sysBCDjenkins
+
+TOMCAT_USAGE="Usage: $0 {\e[00;32mstart\e[00m|\e[00;31mstop\e[00m|\e[00;32mstatus\e[00m|\e[00;31mrestart\e[00m}"
+
+SHUTDOWN_WAIT=20
+
+tomcat_pid() {
+   echo `ps -fe | grep $CATALINA_BASE | grep -v grep | tr -s " " | cut -d" " -f2`
+
+ }
+
+start() {
+
+     pid=$(tomcat_pid)
+     if [ -n "$pid" ]; then
+       echo -e "\e[00;31mTomcat is already running (pid: $pid)\e[00m"
+     else
+       #start tomcat
+       echo -e "\e[00;32mStarting tomcat\e[00m"
+       if [ `user_exists $TOMCAT_USER` = "1" ]; then
+         if [ `whoami` == $TOMCAT_USER ]; then
+	   cd $CATALINA_BASE/bin/
+	   sh $CATALINA_HOME/bin/startup.sh
+	 else
+	   su $TOMCAT_USER -c $CATALINA_HOME/bin/startup.sh
+	 fi
+       else
+         sh $CATALINA_HOME/bin/startup.sh
+      fi
+      status
+     fi
+    return 0
+
+}
+
+stop() {
+    pid=${tomcat_pid}
+    if [ -n "$pid" ]; then
+      echo -e "\e[00;31mStopping Tomcat\e[00m"
+      if [ `user_exists $TOMCAT_USER` = "1" ]; then
+           if [ `whoami` == $TOMCAT_USER ]; then
+               cd $CATALINA_HOME/bin/
+	       sh $CATALINA_HOME/bin/shutdown.sh
+           else
+	       su $TOMCAT_USER -c "cd $CATALINA_HOME/bin/; $CATALINA_HOME/bin/shutdown.sh"
+            fi
+       else      
+	       su $TOMCAT_USER -c $CATALINA_HOME/bin/shutdown.sh
+       fi
+
+     let kwait=$SHUTDOWN_WAIT
+     count=0;
+     until [ `ps -p $pid | grep -c $pid` = '0' ] || [ $count -gt $kwait ]; do
+	  echo -n -e "\n\e[00;31mwaiting for process to exit\e[00m";
+	  sleep 1
+	  let count=$count+1;
+     done
+
+     if [ $count -gt $kwait ]; then
+	  echo -n -e "\n\e[00;31mkilling processes which ddin't stop after $SHUTDOWN_WAIT seconds\e[00m"
+	  kill -9 $pid
+     fi
+   else
+	echo -e "\e[00;31Tomcat is not running\e[00m"
+  fi
+  return 0
+            
+
+}
+
